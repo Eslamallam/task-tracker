@@ -17,13 +17,10 @@
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+ color: #fff;
+ background-color: #181818 !important;
+ font-size: 17px;
+ height: 100vh;
 }
 
 @layer utilities {

@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import GlobalStylesProvider from "./Providers/GlobalStylesProvider";
+import Sidebar from "./Components/Sidebar";
+import { ClerkProvider} from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { ColorSchemeScript, MantineProvider } from "@mantine/core";
+import { Toaster } from 'react-hot-toast';
+import '@mantine/core/styles.css';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,9 +21,33 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { userId } = auth();
+
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <head>
+          <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+            integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+            crossOrigin="anonymous"
+            referrerPolicy="no-referrer"
+          />
+          <ColorSchemeScript forceColorScheme="dark" />
+        </head>
+        <body>
+          <GlobalStylesProvider>
+            {userId && <Sidebar />}
+            <main className="w-full p-4 border-2 border-solid border-[#f9f9f914] bg-[#212121]">
+              <MantineProvider>
+                <Toaster />
+                {children}
+                </MantineProvider>
+            </main>
+          </GlobalStylesProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

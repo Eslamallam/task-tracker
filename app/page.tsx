@@ -1,113 +1,141 @@
-import Image from "next/image";
+"use client";
+
+import {
+  Modal,
+  Button,
+  Input,
+  Textarea,
+  Checkbox,
+  Loader,
+  Badge,
+  Card,
+  Group,
+  Text,
+  ActionIcon,
+  Grid,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { getAllTasks } from "./Providers/api";
+
+interface Task {
+  id?: number;
+  title: string;
+  description?: string;
+  date: string;
+  isCompleted?: boolean;
+  isImportant?: boolean;
+}
 
 export default function Home() {
+  const [opened, { open, close }] = useDisclosure(false);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const { register, handleSubmit } = useForm<Task>();
+
+  const onSubmit = async (data: Task) => {
+    try {
+      const res = await axios.post("/api/task", data);
+
+      if (res.data.error) {
+        toast.error(res.data.error);
+      }
+
+      if (res.data.success) {
+        toast.success(res.data.success);
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    getAllTasks().then((data) => {
+      console.log(data?.body);
+      setTasks(data?.body);
+      setLoading(false);
+    });
+  }, []);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
+    <Grid>
+      <Modal opened={opened} onClose={close} title="Create Task" centered>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="py-2">
+            <Input {...register("title")} placeholder="Title" />
+          </div>
+          <div className="py-2">
+            <Textarea {...register("description")} placeholder="Description" />
+          </div>
+
+          <div className="py-2">
+            <Input {...register("date")} type="date" />
+          </div>
+          <div className="py-2">
+            <Checkbox {...register("isCompleted")} label="Completed" />
+          </div>
+          <div className="py-2">
+            <Checkbox {...register("isImportant")} label="Important" />
+          </div>
+
+          <div className="py-2 float-right">
+            <Button type="submit">Create Task</Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Grid.Col span={12} className="flex justify-between">
+        <h1 className="text-2xl text-white underline underline-offset-4 decoration-4 decoration-green-600 tracking-wide">
+          All Tasks
+        </h1>
+        <Button className="float-right" onClick={open}>
+          Create
+        </Button>
+      </Grid.Col>
+
+      <div className="flex gap-2 my-5">
+        {loading ? (
+          <Loader size={30} />
+        ) : (
+          tasks?.length &&
+          tasks?.map((task: Task) => (
+            <div
+              className="w-80 bg-[#f9f9f910] border-2 border-solid border-[#f9f9f914] rounded-md p-5 shadow-lg"
+              key={task.id}
+            >
+              <Group justify="space-between" mt="xs" mb="xs">
+                <Text fw={500} tt={"uppercase"} c={"#f1f1f1"}>
+                  {task?.title}
+                </Text>
+                <div className="flex gap-2">
+                  {task?.isCompleted && <Badge color="green">Completed</Badge>}
+                  {task?.isImportant && (
+                    <Badge color="yellow">
+                      <i className="fas fa-star"></i>
+                    </Badge>
+                  )}
+                </div>
+              </Group>
+
+              <Text size="sm" c="dimmed">
+                {task?.description}
+              </Text>
+
+              <div className="flex justify-between mt-4">
+                <Text c={"#f1f1f1"}>{task?.date}</Text>
+                <ActionIcon variant="transparent" c={"gray"}>
+                  <i className="fas fa-pen-to-square"></i>
+                </ActionIcon>
+              </div>
+            </div>
+          ))
+        )}
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </Grid>
   );
 }
